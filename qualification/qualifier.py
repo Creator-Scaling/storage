@@ -8,7 +8,7 @@ from typing import Any
 import anthropic
 
 from config import settings
-from config.icp import ICP, REFERENCE_PROFILES
+from config.icp import ICP, REFERENCE_PROFILES, MANYCHAT_SIGNALS
 
 _client: anthropic.Anthropic | None = None
 
@@ -43,6 +43,22 @@ def _posts_per_month(posts: list[dict]) -> float:
 def _avg_reel_views(posts: list[dict]) -> float:
     views = [p.get("videoViewCount") or 0 for p in posts if p.get("type") == "Video"]
     return sum(views) / len(views) if views else 0.0
+
+
+def _detect_manychat_signals(profile: dict[str, Any], posts: list[dict]) -> bool:
+    """Return True if account shows ManyChat/comment-trigger funnel signals."""
+    bio = profile.get("biography", "").lower()
+    external_url = (profile.get("externalUrl") or "").lower()
+
+    if "m.me/" in external_url or "manychat" in bio:
+        return True
+
+    for post in posts[:15]:
+        caption = (post.get("caption") or "").lower()
+        for pattern in MANYCHAT_SIGNALS:
+            if re.search(pattern, caption):
+                return True
+    return False
 
 
 def _quantitative_check(profile: dict[str, Any]) -> tuple[bool, str]:
@@ -129,8 +145,11 @@ def qualify_profile(profile: dict[str, Any]) -> dict[str, Any]:
             "location": "Unknown",
             "confidence": 0,
             "selling_evidence": None,
+            "manychat_signal": False,
         }
 
+    posts = profile.get("latestPosts") or []
+    manychat = _detect_manychat_signals(profile, posts)
     prompt = _build_qualification_prompt(profile)
     client = _get_client()
 
@@ -143,7 +162,9 @@ def qualify_profile(profile: dict[str, Any]) -> dict[str, Any]:
         text = message.content[0].text.strip()
         json_match = re.search(r"\{.*\}", text, re.DOTALL)
         if json_match:
-            return json.loads(json_match.group())
+            result = json.loads(json_match.group())
+        result["manychat_signal"] = manychat
+        return result
     except Exception as exc:
         print(f"  Claude qualification failed for @{profile.get('username')}: {exc}")
 
@@ -156,6 +177,7 @@ def qualify_profile(profile: dict[str, Any]) -> dict[str, Any]:
         "location": "Unknown",
         "confidence": 0,
         "selling_evidence": None,
+        "manychat_signal": manychat,
     }
 
 

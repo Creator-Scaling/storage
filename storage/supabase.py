@@ -52,6 +52,7 @@ def append_leads(leads: list[dict[str, Any]]) -> int:
             "selling_evidence": lead.get("selling_evidence") or "",
             "confidence": lead.get("confidence"),
             "qualification_notes": lead.get("qualification_notes") or "",
+            "manychat_signal": lead.get("manychat_signal") or False,
             "audit_url": "",
             "created_at": now,
             "audited_at": None,

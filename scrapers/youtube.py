@@ -5,6 +5,7 @@ from typing import Any
 from apify_client import ApifyClient
 
 from config import settings
+from config.icp import YOUTUBE_SEARCH_TERMS
 
 _client: ApifyClient | None = None
 
@@ -70,3 +71,35 @@ def get_channel_data(channel_url: str) -> dict[str, Any] | None:
         "description": (channel_info.get("description") or "")[:1000],
         "videos": videos[:20],
     }
+
+
+def search_channels_by_keyword(
+    keywords: list[str] | None = None,
+    results_per_keyword: int = 20,
+) -> list[str]:
+    """Search YouTube by keyword and return channel URLs."""
+    keywords = keywords or YOUTUBE_SEARCH_TERMS
+    client = _get_client()
+    channel_urls: set[str] = set()
+
+    print(f"  Searching YouTube for {len(keywords)} terms...")
+
+    for keyword in keywords:
+        run_input = {
+            "searchKeywords": keyword,
+            "maxResults": results_per_keyword,
+            "type": "channel",
+        }
+        try:
+            run = client.actor(settings.APIFY_YOUTUBE_ACTOR).call(run_input=run_input)
+            items = list(client.dataset(run["defaultDatasetId"]).iterate_items())
+            for item in items:
+                url = item.get("url") or item.get("channelUrl")
+                if url and ("youtube.com/channel" in url or "youtube.com/@" in url or "youtube.com/c/" in url):
+                    channel_urls.add(url)
+            print(f"    '{keyword}' → {len(items)} channels")
+        except Exception as exc:
+            print(f"    '{keyword}' failed: {exc}")
+
+    print(f"  Found {len(channel_urls)} unique YouTube channels.")
+    return list(channel_urls)

@@ -6,7 +6,7 @@ from typing import Any
 from apify_client import ApifyClient
 
 from config import settings
-from config.icp import NICHE_HASHTAGS
+from config.icp import NICHE_HASHTAGS, PLATFORM_HANDLES, BIO_KEYWORDS
 
 _client: ApifyClient | None = None
 
@@ -18,7 +18,7 @@ def _get_client() -> ApifyClient:
     return _client
 
 
-def discover_handles_by_niche(
+def discover_handles_by_hashtag(
     niches: list[str] | None = None,
     posts_per_hashtag: int = 50,
 ) -> list[str]:
@@ -47,6 +47,94 @@ def discover_handles_by_niche(
             handles.add(owner.lower())
 
     print(f"  Found {len(handles)} unique handles from hashtag scrape.")
+    return list(handles)
+
+
+def discover_handles_by_keyword(
+    keywords: list[str] | None = None,
+    results_per_keyword: int = 30,
+) -> list[str]:
+    """Search Instagram by bio/username keywords and return unique handles."""
+    keywords = keywords or BIO_KEYWORDS
+    client = _get_client()
+    handles: set[str] = set()
+
+    print(f"  Searching Instagram for {len(keywords)} keywords...")
+
+    for keyword in keywords:
+        run_input = {
+            "searchQueries": [keyword],
+            "searchType": "user",
+            "maxResults": results_per_keyword,
+        }
+        try:
+            run = client.actor("apify/instagram-search-scraper").call(run_input=run_input)
+            items = list(client.dataset(run["defaultDatasetId"]).iterate_items())
+            for item in items:
+                username = item.get("username") or item.get("ownerUsername")
+                if username:
+                    handles.add(username.lower())
+            print(f"    '{keyword}' → {len(items)} accounts")
+        except Exception as exc:
+            print(f"    '{keyword}' failed: {exc}")
+        time.sleep(1)
+
+    print(f"  Found {len(handles)} unique handles from keyword search.")
+    return list(handles)
+
+
+def discover_handles_from_platform_followers(
+    platform_handles: list[str] | None = None,
+    limit_per_account: int = 300,
+) -> list[str]:
+    """Scrape followers of platform/tool accounts (Kajabi, Skool, etc.)."""
+    platform_handles = platform_handles or PLATFORM_HANDLES
+    client = _get_client()
+    handles: set[str] = set()
+
+    print(f"  Scraping followers of {len(platform_handles)} platform accounts...")
+
+    for handle in platform_handles:
+        print(f"    @{handle}...")
+        run_input = {
+            "username": [handle],
+            "maxItems": limit_per_account,
+        }
+        try:
+            run = client.actor("apify/instagram-follower-scraper").call(run_input=run_input)
+            items = list(client.dataset(run["defaultDatasetId"]).iterate_items())
+            count = 0
+            for item in items:
+                username = item.get("username")
+                if username:
+                    handles.add(username.lower())
+                    count += 1
+            print(f"      → {count} followers")
+        except Exception as exc:
+            print(f"      Failed: {exc}")
+        time.sleep(2)
+
+    print(f"  Found {len(handles)} unique handles from platform followers.")
+    return list(handles)
+
+
+def discover_handles_from_lookalikes(
+    reference_handles: list[str],
+    limit_per_handle: int = 20,
+) -> list[str]:
+    """Find suggested/similar accounts based on reference profiles."""
+    client = _get_client()
+    profiles = get_profile_data(reference_handles)
+    handles: set[str] = set()
+
+    for profile in profiles:
+        related = profile.get("relatedProfiles") or profile.get("suggestedAccounts") or []
+        for acc in related[:limit_per_handle]:
+            username = acc.get("username")
+            if username:
+                handles.add(username.lower())
+
+    print(f"  Found {len(handles)} lookalike handles from reference profiles.")
     return list(handles)
 
 

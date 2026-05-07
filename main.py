@@ -27,14 +27,36 @@ def cli():
 @click.option("--dry-run", is_flag=True, help="Qualify and print results without writing to Supabase.")
 def discover(niches, posts_per_hashtag, limit, dry_run):
     """Discover and qualify leads from Instagram, write qualified ones to Supabase."""
-    from scrapers.instagram import discover_handles_by_niche, get_profile_data, extract_youtube_url_from_bio
+    from scrapers.instagram import (
+        discover_handles_by_hashtag,
+        discover_handles_by_keyword,
+        discover_handles_from_platform_followers,
+        get_profile_data,
+        extract_youtube_url_from_bio,
+    )
     from qualification.qualifier import qualify_batch, _posts_per_month, _avg_reel_views
     from enrichment.apollo import extract_bio_email, find_email
     from storage.supabase import append_leads
 
     selected_niches = list(niches) if niches else list(NICHE_HASHTAGS.keys())
-    click.echo(f"\n[1/4] Discovering handles for niches: {', '.join(selected_niches)}")
-    handles = discover_handles_by_niche(selected_niches, posts_per_hashtag=posts_per_hashtag)
+    all_handles: set[str] = set()
+
+    click.echo(f"\n[1/4] Discovering handles — hashtags, keywords, platform followers...")
+
+    click.echo("  → Hashtag scrape")
+    hashtag_handles = discover_handles_by_hashtag(selected_niches, posts_per_hashtag=posts_per_hashtag)
+    all_handles.update(hashtag_handles)
+
+    click.echo("  → Bio keyword search")
+    keyword_handles = discover_handles_by_keyword()
+    all_handles.update(keyword_handles)
+
+    click.echo("  → Platform follower scrape (Kajabi, Skool, Stan Store...)")
+    platform_handles = discover_handles_from_platform_followers()
+    all_handles.update(platform_handles)
+
+    handles = list(all_handles)
+    click.echo(f"  Total unique handles across all sources: {len(handles)}")
 
     if limit and len(handles) > limit:
         handles = handles[:limit]
@@ -95,6 +117,7 @@ def discover(niches, posts_per_hashtag, limit, dry_run):
             "selling_evidence": result.get("selling_evidence", ""),
             "confidence": result.get("confidence", 0),
             "qualification_notes": result.get("reason", ""),
+            "manychat_signal": result.get("manychat_signal", False),
         })
 
     added = append_leads(lead_rows)

@@ -16,6 +16,66 @@ ICP = {
     ],
 }
 
+# Platform/tool accounts whose followers are overwhelmingly coaches & course creators
+PLATFORM_HANDLES = [
+    "skool",
+    "kajabi",
+    "stanstore",
+    "gohighlevel",
+    "clickfunnels",
+    "teachable",
+    "thinkific",
+    "podia",
+    "mightynetworks",
+]
+
+# Bio/username keywords for direct Instagram account search
+BIO_KEYWORDS = [
+    "business coach",
+    "online course creator",
+    "life coach",
+    "marketing coach",
+    "financial coach",
+    "real estate coach",
+    "forex coach",
+    "trading coach",
+    "mindset coach",
+    "high ticket coach",
+    "online educator",
+    "course creator",
+    "I help entrepreneurs",
+    "I help coaches",
+    "join my programme",
+    "join my program",
+    "enroll now",
+    "apply for coaching",
+    "free training",
+    "DM me to join",
+]
+
+# YouTube search terms for channel discovery
+YOUTUBE_SEARCH_TERMS = [
+    "business coaching programme",
+    "online course creator",
+    "make money online course",
+    "real estate investing course",
+    "forex trading course",
+    "credit repair course",
+    "AI tools for business",
+    "high ticket coaching",
+    "online mentorship programme",
+    "dropshipping course 2025",
+]
+
+# ManyChat/funnel CTA signals in post captions
+MANYCHAT_SIGNALS = [
+    r"comment\s+['\"]?\w+['\"]?\s+(below|for|to get|and i'll)",
+    r"type\s+['\"]?\w+['\"]?\s+(below|in the comments|for)",
+    r"dm\s+me\s+(the word|['\"]?\w+['\"]?)\s+for",
+    r"comment\s+(yes|['\"]yes['\"])\s+",
+    r"m\.me/",
+]
+
 # Hashtags to discover leads per niche. Extend freely.
 NICHE_HASHTAGS: dict[str, list[str]] = {
     "Make Money Online / Business Opportunity": [
