@@ -30,8 +30,8 @@ def research_lead(lead: dict[str, Any]) -> dict[str, Any]:
     Gather all available content for a lead to inform the audit.
     lead dict uses Google Sheets column names.
     """
-    handle = lead.get("Instagram Handle", "").lstrip("@")
-    youtube_url = lead.get("YouTube URL", "")
+    handle = lead.get("instagram_handle", "").lstrip("@")
+    youtube_url = lead.get("youtube_url", "")
 
     print(f"  Fetching Instagram data for @{handle}...")
     profiles = get_profile_data([handle]) if handle else []
@@ -78,8 +78,8 @@ def research_lead(lead: dict[str, Any]) -> dict[str, Any]:
         "external_url": external_url,
         "profile_pic_url": profile.get("profilePicUrl") or profile.get("profilePicUrlHD", ""),
         "followers": profile.get("followersCount"),
-        "niche": lead.get("Niche", ""),
-        "selling_evidence": lead.get("Selling", ""),
+        "niche": lead.get("niche", ""),
+        "selling_evidence": lead.get("selling_evidence", ""),
         "linkinbio_text": linkinbio_text,
         "recent_posts": post_summaries,
         "youtube": {

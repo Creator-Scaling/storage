@@ -14,8 +14,10 @@ def _require(key: str) -> str:
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
 APIFY_API_TOKEN = os.environ.get("APIFY_API_TOKEN", "")
 APOLLO_API_KEY = os.environ.get("APOLLO_API_KEY", "")
-GOOGLE_SERVICE_ACCOUNT_FILE = os.environ.get("GOOGLE_SERVICE_ACCOUNT_FILE", "service_account.json")
-GOOGLE_SHEETS_ID = os.environ.get("GOOGLE_SHEETS_ID", "")
+
+# Supabase
+SUPABASE_URL = os.environ.get("SUPABASE_URL", "")          # https://xxxx.supabase.co
+SUPABASE_SERVICE_KEY = os.environ.get("SUPABASE_SERVICE_KEY", "")
 
 # GitHub Pages — for hosting audit HTML pages
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN", "")
