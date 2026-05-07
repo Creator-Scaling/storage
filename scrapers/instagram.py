@@ -54,7 +54,11 @@ def discover_handles_by_keyword(
     keywords: list[str] | None = None,
     results_per_keyword: int = 30,
 ) -> list[str]:
-    """Search Instagram by bio/username keywords and return unique handles."""
+    """Search Instagram by bio/username keywords and return unique handles.
+
+    Uses apify/instagram-scraper in 'user' search mode which filters by account
+    name and username rather than bio text. Works best with niche-specific terms.
+    """
     keywords = keywords or BIO_KEYWORDS
     client = _get_client()
     handles: set[str] = set()
@@ -63,12 +67,12 @@ def discover_handles_by_keyword(
 
     for keyword in keywords:
         run_input = {
-            "searchQueries": [keyword],
             "searchType": "user",
-            "maxResults": results_per_keyword,
+            "searchQueries": [keyword],
+            "resultsLimit": results_per_keyword,
         }
         try:
-            run = client.actor("apify/instagram-search-scraper").call(run_input=run_input)
+            run = client.actor("apify/instagram-scraper").call(run_input=run_input)
             items = list(client.dataset(run["defaultDatasetId"]).iterate_items())
             for item in items:
                 username = item.get("username") or item.get("ownerUsername")

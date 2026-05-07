@@ -31,17 +31,19 @@ def discover(niches, posts_per_hashtag, limit, dry_run):
         discover_handles_by_hashtag,
         discover_handles_by_keyword,
         discover_handles_from_platform_followers,
+        discover_handles_from_lookalikes,
         get_profile_data,
         extract_youtube_url_from_bio,
     )
     from qualification.qualifier import qualify_batch, _posts_per_month, _avg_reel_views
     from enrichment.apollo import extract_bio_email, find_email
     from storage.supabase import append_leads
+    from config.icp import REFERENCE_PROFILES
 
     selected_niches = list(niches) if niches else list(NICHE_HASHTAGS.keys())
     all_handles: set[str] = set()
 
-    click.echo(f"\n[1/4] Discovering handles — hashtags, keywords, platform followers...")
+    click.echo(f"\n[1/4] Discovering handles — hashtags, keywords, platform followers, lookalikes...")
 
     click.echo("  → Hashtag scrape")
     hashtag_handles = discover_handles_by_hashtag(selected_niches, posts_per_hashtag=posts_per_hashtag)
@@ -54,6 +56,11 @@ def discover(niches, posts_per_hashtag, limit, dry_run):
     click.echo("  → Platform follower scrape (Kajabi, Skool, Stan Store...)")
     platform_handles = discover_handles_from_platform_followers()
     all_handles.update(platform_handles)
+
+    click.echo("  → Lookalike accounts from reference profiles")
+    reference_handles = [r["handle"] for r in REFERENCE_PROFILES]
+    lookalike_handles = discover_handles_from_lookalikes(reference_handles)
+    all_handles.update(lookalike_handles)
 
     handles = list(all_handles)
     click.echo(f"  Total unique handles across all sources: {len(handles)}")

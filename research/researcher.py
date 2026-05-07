@@ -73,7 +73,7 @@ def research_lead(lead: dict[str, Any]) -> dict[str, Any]:
 
     return {
         "handle": handle,
-        "full_name": f"{lead.get('First Name', '')} {lead.get('Last Name', '')}".strip(),
+        "full_name": f"{lead.get('first_name', '')} {lead.get('last_name', '')}".strip(),
         "bio": profile.get("biography", ""),
         "external_url": external_url,
         "profile_pic_url": profile.get("profilePicUrl") or profile.get("profilePicUrlHD", ""),
