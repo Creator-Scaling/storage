@@ -76,6 +76,7 @@ def research_lead(lead: dict[str, Any]) -> dict[str, Any]:
         "full_name": f"{lead.get('First Name', '')} {lead.get('Last Name', '')}".strip(),
         "bio": profile.get("biography", ""),
         "external_url": external_url,
+        "profile_pic_url": profile.get("profilePicUrl") or profile.get("profilePicUrlHD", ""),
         "followers": profile.get("followersCount"),
         "niche": lead.get("Niche", ""),
         "selling_evidence": lead.get("Selling", ""),

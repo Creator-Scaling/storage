@@ -65,13 +65,151 @@ Describe:
 - Results or proof points you can reference
 """
 
-# Reference profiles will be loaded here once you supply them.
-# Format: list of dicts with keys: handle, niche, why_they_qualify
+# Confirmed ideal prospects — used to calibrate Claude's qualification judgement.
 REFERENCE_PROFILES: list[dict] = [
-    # Example:
-    # {
-    #     "handle": "example_coach",
-    #     "niche": "Coaching, Consulting & Mentorship Offers",
-    #     "why_they_qualify": "Sells a $5k mentorship, 45k followers, consistent reels 2k+ views",
-    # },
+    # --- Make Money Online / Business Opportunity ---
+    {
+        "handle": "meganhealeey",
+        "niche": "Make Money Online / Business Opportunity",
+        "why_they_qualify": "Sells Vending Mastery Course via Skool, active programme with funnel, English-speaking US audience",
+    },
+    {
+        "handle": "thejuanjeronimo",
+        "niche": "Make Money Online / Business Opportunity",
+        "why_they_qualify": "Sells Wealth Streams Academy ATM/passive income programme, active community funnel",
+    },
+    {
+        "handle": "therubenlozoya",
+        "niche": "Make Money Online / Business Opportunity",
+        "why_they_qualify": "Sells push2win.biz programme, active website funnel, consistent output",
+    },
+    {
+        "handle": "dnald14",
+        "niche": "Make Money Online / Business Opportunity",
+        "why_they_qualify": "Sells via Stan Store, active on Instagram and YouTube, Make Money Online niche",
+    },
+    {
+        "handle": "rico_rixo",
+        "niche": "Make Money Online / Business Opportunity",
+        "why_they_qualify": "Beacons link-in-bio, active on YouTube and Instagram, online business content",
+    },
+    {
+        "handle": "dsanglay",
+        "niche": "Make Money Online / Business Opportunity",
+        "why_they_qualify": "Active Linktree funnel, consistent Instagram and YouTube presence",
+    },
+    {
+        "handle": "iamsebastianbetancur",
+        "niche": "Make Money Online / Business Opportunity",
+        "why_they_qualify": "Sells 6-figure affiliate marketing programme via Whop, active on both platforms",
+    },
+    {
+        "handle": "sourcingwithazu",
+        "niche": "Make Money Online / Business Opportunity",
+        "why_they_qualify": "Sells Virtual Sourcing Masterclass, active Instagram presence in e-commerce/sourcing niche",
+    },
+    {
+        "handle": "snipernick32",
+        "niche": "Make Money Online / Business Opportunity",
+        "why_they_qualify": "Sells via free-webinar funnel (sniperkicks.info), active Instagram and YouTube",
+    },
+    # --- Real Estate ---
+    {
+        "handle": "matthew.bnb",
+        "niche": "Real Estate",
+        "why_they_qualify": "Sells Passive Profits Coaching (Airbnb/STR), dedicated website, active on both platforms",
+    },
+    {
+        "handle": "airbnbautomated",
+        "niche": "Real Estate",
+        "why_they_qualify": "Sean Rakidzich — sells Cracking Superhost programme, large YouTube audience, active funnel",
+    },
+    {
+        "handle": "stefaniekebede",
+        "niche": "Real Estate",
+        "why_they_qualify": "Sells Real Estate Collective via Whop, active on Instagram and YouTube",
+    },
+    {
+        "handle": "james_the_property_coach",
+        "niche": "Real Estate",
+        "why_they_qualify": "UK-based property coach, dedicated website jamesbennett.uk, active on both platforms",
+    },
+    {
+        "handle": "landprofits",
+        "niche": "Real Estate",
+        "why_they_qualify": "Ella — UK-based, sells land investing masterclass, active Instagram",
+    },
+    {
+        "handle": "flippingmastery",
+        "niche": "Real Estate",
+        "why_they_qualify": "Jerry — house flipping education, large YouTube presence, active Instagram",
+    },
+    {
+        "handle": "bnbleaders",
+        "niche": "Real Estate",
+        "why_they_qualify": "BnB/STR coaching, active Instagram and YouTube content",
+    },
+    # --- Credit & Finances ---
+    {
+        "handle": "trader.jeafx_",
+        "niche": "Credit & Finances",
+        "why_they_qualify": "Sells forex trading programme at jeafx.com/go, active on Instagram and YouTube",
+    },
+    {
+        "handle": "kellyohgee",
+        "niche": "Credit & Finances",
+        "why_they_qualify": "Sells trading education via tradeitsolutions.com, active on both platforms",
+    },
+    {
+        "handle": "traderdivergent",
+        "niche": "Credit & Finances",
+        "why_they_qualify": "The Divergent Trader — active YouTube and Instagram, trading education",
+    },
+    {
+        "handle": "mamba_trades",
+        "niche": "Credit & Finances",
+        "why_they_qualify": "Active on Instagram and YouTube, trading education content",
+    },
+    # --- AI Solutions ---
+    {
+        "handle": "edwinavoiceofai",
+        "niche": "AI Solutions",
+        "why_they_qualify": "Sells AIM Academy via Skool, active on Instagram and YouTube in AI education niche",
+    },
+    # --- Coaching, Consulting & Mentorship Offers ---
+    {
+        "handle": "autocleanacademy",
+        "niche": "Coaching, Consulting & Mentorship Offers",
+        "why_they_qualify": "Sells auto detailing training via free workshop funnel, active Instagram and YouTube",
+    },
+    {
+        "handle": "austincookofficial",
+        "niche": "Coaching, Consulting & Mentorship Offers",
+        "why_they_qualify": "Sells Window Film Academy (tint training), dedicated programme website, active on both platforms",
+    },
+    {
+        "handle": "withmarko",
+        "niche": "Coaching, Consulting & Mentorship Offers",
+        "why_they_qualify": "Marko — active on Instagram and YouTube, business/coaching content",
+    },
+    {
+        "handle": "imlisatran",
+        "niche": "Coaching, Consulting & Mentorship Offers",
+        "why_they_qualify": "Lisa Tran — sells tutoring business programme via TutorBoss, active on both platforms",
+    },
+    {
+        "handle": "jimmy_on_relationships",
+        "niche": "Coaching, Consulting & Mentorship Offers",
+        "why_they_qualify": "Relationship coaching, active Instagram and YouTube audience",
+    },
+    {
+        "handle": "jacobgodar",
+        "niche": "High-Ticket Education & Online Programmes",
+        "why_they_qualify": "Jacob Godar — active on Instagram and YouTube, online education/creator niche",
+    },
+    {
+        "handle": "thatnateblack",
+        "niche": "High-Ticket Education & Online Programmes",
+        "why_they_qualify": "Nate Black — sells RadicalYT programme, active YouTube and Instagram, creator education",
+    },
 ]

@@ -1,25 +1,16 @@
 from __future__ import annotations
 
-import json
 import re
-from datetime import datetime, timezone
 from typing import Any
 
 import anthropic
-from google.oauth2 import service_account
-from googleapiclient.discovery import build
 
+from audit.html_template import render
+from audit.github_pages import deploy_html
 from config import settings
 from config.icp import HIGH_TICKET_WEBINAR_STRATEGY
 
 _anthropic_client: anthropic.Anthropic | None = None
-_docs_service = None
-_drive_service = None
-
-SCOPES = [
-    "https://www.googleapis.com/auth/documents",
-    "https://www.googleapis.com/auth/drive",
-]
 
 
 def _get_anthropic() -> anthropic.Anthropic:
@@ -27,26 +18,6 @@ def _get_anthropic() -> anthropic.Anthropic:
     if _anthropic_client is None:
         _anthropic_client = anthropic.Anthropic(api_key=settings.ANTHROPIC_API_KEY)
     return _anthropic_client
-
-
-def _get_docs():
-    global _docs_service
-    if _docs_service is None:
-        creds = service_account.Credentials.from_service_account_file(
-            settings.GOOGLE_SERVICE_ACCOUNT_FILE, scopes=SCOPES
-        )
-        _docs_service = build("docs", "v1", credentials=creds)
-    return _docs_service
-
-
-def _get_drive():
-    global _drive_service
-    if _drive_service is None:
-        creds = service_account.Credentials.from_service_account_file(
-            settings.GOOGLE_SERVICE_ACCOUNT_FILE, scopes=SCOPES
-        )
-        _drive_service = build("drive", "v3", credentials=creds)
-    return _drive_service
 
 
 def _build_audit_prompt(research: dict[str, Any]) -> str:
@@ -115,133 +86,25 @@ Keep the tone professional but conversational. No generic filler. Every point sh
 
 
 def generate_audit_text(research: dict[str, Any]) -> str:
-    """Call Claude to generate the audit copy."""
     client = _get_anthropic()
-    prompt = _build_audit_prompt(research)
     message = client.messages.create(
         model=settings.CLAUDE_MODEL,
         max_tokens=4096,
-        messages=[{"role": "user", "content": prompt}],
+        messages=[{"role": "user", "content": _build_audit_prompt(research)}],
     )
     return message.content[0].text.strip()
 
 
-def _audit_to_doc_requests(title: str, audit_text: str, research: dict) -> list[dict]:
-    """Convert audit plain text into Google Docs API batchUpdate requests."""
-    requests_list = []
-    index = 1  # Docs API uses 1-based insertion index
-
-    SECTION_HEADINGS = [
-        "PROFILE OVERVIEW",
-        "WHAT THEY'RE DOING WELL",
-        "CONTENT GAPS & IMPROVEMENT OPPORTUNITIES",
-        "ENGAGEMENT ANALYSIS",
-        "WHY A HIGH TICKET WEBINAR STRATEGY WOULD WORK FOR THEM",
-        "PERSONALISED OUTREACH TALKING POINTS",
-    ]
-
-    lines = audit_text.split("\n")
-    elements: list[tuple[str, str]] = []  # (style, text)
-
-    # Title block
-    date_str = datetime.now(timezone.utc).strftime("%d %B %Y")
-    elements.append(("title", f"{research.get('full_name', '')} — Content Audit\n"))
-    elements.append(("subtitle", f"@{research.get('handle')} | {research.get('niche')} | Generated {date_str}\n"))
-    elements.append(("normal", "\n"))
-
-    for line in lines:
-        stripped = line.strip()
-        if not stripped:
-            elements.append(("normal", "\n"))
-        elif stripped.upper() in [h.upper() for h in SECTION_HEADINGS]:
-            elements.append(("heading1", stripped + "\n"))
-        elif stripped.startswith("- ") or stripped.startswith("• "):
-            elements.append(("bullet", stripped[2:] + "\n"))
-        else:
-            elements.append(("normal", stripped + "\n"))
-
-    # Build insert requests
-    for style, text in elements:
-        requests_list.append({
-            "insertText": {"location": {"index": index}, "text": text}
-        })
-        text_len = len(text)
-
-        if style == "title":
-            requests_list.append({
-                "updateParagraphStyle": {
-                    "range": {"startIndex": index, "endIndex": index + text_len},
-                    "paragraphStyle": {"namedStyleType": "TITLE"},
-                    "fields": "namedStyleType",
-                }
-            })
-        elif style == "subtitle":
-            requests_list.append({
-                "updateParagraphStyle": {
-                    "range": {"startIndex": index, "endIndex": index + text_len},
-                    "paragraphStyle": {"namedStyleType": "SUBTITLE"},
-                    "fields": "namedStyleType",
-                }
-            })
-        elif style == "heading1":
-            requests_list.append({
-                "updateParagraphStyle": {
-                    "range": {"startIndex": index, "endIndex": index + text_len},
-                    "paragraphStyle": {"namedStyleType": "HEADING_1"},
-                    "fields": "namedStyleType",
-                }
-            })
-        elif style == "bullet":
-            requests_list.append({
-                "createParagraphBullets": {
-                    "range": {"startIndex": index, "endIndex": index + text_len},
-                    "bulletPreset": "BULLET_DISC_CIRCLE_SQUARE",
-                }
-            })
-
-        index += text_len
-
-    return requests_list
-
-
-def create_google_doc(research: dict[str, Any], audit_text: str) -> str:
-    """Create a formatted Google Doc with the audit. Returns the doc URL."""
-    docs = _get_docs()
-    drive = _get_drive()
-
-    name = research.get("full_name") or research.get("handle", "Lead")
-    doc_title = f"{name} — Content Audit"
-
-    # Create blank doc
-    doc = docs.documents().create(body={"title": doc_title}).execute()
-    doc_id = doc["documentId"]
-
-    # Move to designated folder if configured
-    if settings.GOOGLE_DRIVE_FOLDER_ID:
-        file = drive.files().get(fileId=doc_id, fields="parents").execute()
-        previous_parents = ",".join(file.get("parents", []))
-        drive.files().update(
-            fileId=doc_id,
-            addParents=settings.GOOGLE_DRIVE_FOLDER_ID,
-            removeParents=previous_parents,
-            fields="id, parents",
-        ).execute()
-
-    # Write content
-    batch_requests = _audit_to_doc_requests(doc_title, audit_text, research)
-    if batch_requests:
-        docs.documents().batchUpdate(
-            documentId=doc_id,
-            body={"requests": batch_requests},
-        ).execute()
-
-    return f"https://docs.google.com/document/d/{doc_id}/edit"
-
-
-def generate_audit_doc(research: dict[str, Any]) -> str:
-    """Full pipeline: generate audit text → create Google Doc → return URL."""
-    print(f"  Generating audit for {research.get('full_name') or research.get('handle')}...")
+def generate_audit_page(research: dict[str, Any]) -> str:
+    """Generate audit text → render HTML → push to GitHub Pages → return URL."""
+    handle = research.get("handle", "lead")
+    print(f"  Generating audit copy for @{handle}...")
     audit_text = generate_audit_text(research)
-    print(f"  Creating Google Doc...")
-    url = create_google_doc(research, audit_text)
+
+    print(f"  Rendering HTML page...")
+    html = render(research, audit_text)
+
+    print(f"  Deploying to GitHub Pages...")
+    url = deploy_html(handle, html)
+
     return url

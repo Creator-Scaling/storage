@@ -143,7 +143,7 @@ def research(limit):
     """Run deep research + generate audit Google Docs for Approved leads."""
     from storage import sheets
     from research.researcher import research_lead
-    from audit.generator import generate_audit_doc
+    from audit.generator import generate_audit_page
 
     approved = sheets.get_leads_by_status(sheets.STATUS_APPROVED)
     if not approved:
@@ -164,7 +164,7 @@ def research(limit):
 
         try:
             research_data = research_lead(lead)
-            doc_url = generate_audit_doc(research_data)
+            doc_url = generate_audit_page(research_data)
             sheets.update_lead_status(lead["_row"], sheets.STATUS_AUDITED, audit_doc_url=doc_url)
             click.echo(f"  Audit doc: {doc_url}\n")
         except Exception as exc:
