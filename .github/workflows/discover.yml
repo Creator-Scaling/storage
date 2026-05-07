@@ -1,0 +1,61 @@
+name: Discover Leads
+
+on:
+  workflow_dispatch:
+    inputs:
+      niches:
+        description: 'Niches to scrape (comma-separated, leave blank for all)'
+        required: false
+        default: ''
+      posts_per_hashtag:
+        description: 'Posts to pull per hashtag'
+        required: false
+        default: '30'
+      limit:
+        description: 'Max profiles to qualify (0 = no cap)'
+        required: false
+        default: '100'
+
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: claude/social-media-lead-generation-HB1Oa
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run discovery
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          APIFY_API_TOKEN: ${{ secrets.APIFY_API_TOKEN }}
+          APOLLO_API_KEY: ${{ secrets.APOLLO_API_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          GITHUB_TOKEN: ${{ secrets.PAT_GITHUB }}
+          GITHUB_PAGES_REPO: ${{ secrets.GITHUB_PAGES_REPO }}
+          GITHUB_PAGES_BRANCH: main
+          GITHUB_PAGES_PATH: ''
+          GITHUB_PAGES_CUSTOM_DOMAIN: ${{ secrets.GITHUB_PAGES_CUSTOM_DOMAIN }}
+        run: |
+          if [ -n "${{ github.event.inputs.niches }}" ]; then
+            IFS=',' read -ra NICHE_ARRAY <<< "${{ github.event.inputs.niches }}"
+            NICHE_ARGS=""
+            for niche in "${NICHE_ARRAY[@]}"; do
+              NICHE_ARGS="$NICHE_ARGS --niches \"$(echo $niche | xargs)\""
+            done
+            eval python3 main.py discover $NICHE_ARGS \
+              --posts-per-hashtag ${{ github.event.inputs.posts_per_hashtag }} \
+              --limit ${{ github.event.inputs.limit }}
+          else
+            python3 main.py discover \
+              --posts-per-hashtag ${{ github.event.inputs.posts_per_hashtag }} \
+              --limit ${{ github.event.inputs.limit }}
+          fi
