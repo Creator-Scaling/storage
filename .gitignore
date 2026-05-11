@@ -9,3 +9,8 @@ dist/
 build/
 .venv/
 venv/
+
+# Lead data files — contain personal data, keep local only
+*.csv
+exports/
+imports/
